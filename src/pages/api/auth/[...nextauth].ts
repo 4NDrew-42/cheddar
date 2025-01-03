@@ -1,7 +1,22 @@
-import NextAuth from 'next-auth';
+import NextAuth, { NextAuthOptions, DefaultSession } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import { MongoDBAdapter } from '@next-auth/mongodb-adapter';
 import { MongoClient } from 'mongodb';
+import User from '../../../models/User';
+import bcrypt from 'bcryptjs';
+
+declare module 'next-auth' {
+	interface Session {
+		user: {
+			id: string;
+		} & DefaultSession['user'];
+	}
+
+	interface User {
+		id: string;
+		email: string;
+	}
+}
 
 const uri = process.env.MONGODB_URI;
 if (!uri) {
@@ -9,10 +24,8 @@ if (!uri) {
 }
 
 const clientPromise = MongoClient.connect(uri);
-import User from '../../../models/User';
-import bcrypt from 'bcryptjs';
 
-export default NextAuth({
+export const authOptions: NextAuthOptions = {
 	adapter: MongoDBAdapter(clientPromise),
 	providers: [
 		CredentialsProvider({
@@ -44,4 +57,20 @@ export default NextAuth({
 		strategy: 'jwt',
 	},
 	secret: process.env.NEXTAUTH_SECRET,
-});
+	callbacks: {
+		async jwt({ token, user }) {
+			if (user) {
+				token.id = user.id;
+			}
+			return token;
+		},
+		async session({ session, token }) {
+			if (session.user) {
+				session.user.id = token.id as string;
+			}
+			return session;
+		},
+	},
+};
+
+export default NextAuth(authOptions);

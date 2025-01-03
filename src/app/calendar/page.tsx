@@ -7,21 +7,40 @@ import { useEffect, useState } from 'react';
 import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
 import type { Post } from '../../models/Post';
+import { useRouter } from 'next/navigation';
 
 export default function CalendarPage() {
-	const { data: session } = useSession();
+	const { data: session, status } = useSession();
 	const [posts, setPosts] = useState<Post[]>([]);
+	const [loading, setLoading] = useState(true);
+	const router = useRouter();
 
 	useEffect(() => {
-		if (session?.user) {
+		if (status === 'unauthenticated') {
+			router.push('/');
+			return;
+		}
+
+		if (status === 'authenticated' && session?.user) {
+			setLoading(true);
 			fetch('/api/posts')
 				.then((res) => res.json())
-				.then((data) => setPosts(data));
+				.then((data) => setPosts(data))
+				.catch((error) => console.error('Error fetching posts:', error))
+				.finally(() => setLoading(false));
 		}
-	}, [session]);
+	}, [status, session, router]);
 
-	if (!session) {
-		return <div className="p-4">Please log in to view your calendar</div>;
+	if (status === 'loading' || loading) {
+		return (
+			<div className="flex items-center justify-center min-h-screen">
+				<div className="text-lg">Loading...</div>
+			</div>
+		);
+	}
+
+	if (status === 'unauthenticated') {
+		return null; // Router will handle redirect
 	}
 
 	return (
@@ -31,16 +50,22 @@ export default function CalendarPage() {
 				<div className="lg:col-span-1">
 					<PostEditor
 						onSave={async (post) => {
-							const response = await fetch('/api/posts', {
-								method: 'POST',
-								headers: {
-									'Content-Type': 'application/json',
-								},
-								body: JSON.stringify(post),
-							});
-							if (response.ok) {
-								const newPost = await response.json();
-								setPosts([...posts, newPost]);
+							try {
+								const response = await fetch('/api/posts', {
+									method: 'POST',
+									headers: {
+										'Content-Type': 'application/json',
+									},
+									body: JSON.stringify(post),
+								});
+								if (response.ok) {
+									const newPost = await response.json();
+									setPosts([...posts, newPost]);
+								} else {
+									console.error('Failed to create post:', await response.text());
+								}
+							} catch (error) {
+								console.error('Error creating post:', error);
 							}
 						}}
 					/>
@@ -48,7 +73,7 @@ export default function CalendarPage() {
 				<Calendar
 					tileContent={({ date }) => {
 						const postDates = posts.map((post) => new Date(post.date).toDateString());
-						return postDates.includes(date.toDateString()) ? <div className="w-1 h-1 bg-blue-500 rounded-full mx-auto"></div> : null;
+						return postDates.includes(date.toDateString()) ? <div className="w-1 h-1 bg-blue-500 rounded-full mx-auto" /> : null;
 					}}
 				/>
 				<div>
