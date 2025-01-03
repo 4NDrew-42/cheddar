@@ -8,11 +8,13 @@ import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
 import type { Post } from '../../models/Post';
 import { useRouter } from 'next/navigation';
+import { config } from '../../lib/config';
 
 export default function CalendarPage() {
 	const { data: session, status } = useSession();
 	const [posts, setPosts] = useState<Post[]>([]);
 	const [loading, setLoading] = useState(true);
+	const [error, setError] = useState<string | null>(null);
 	const router = useRouter();
 
 	useEffect(() => {
@@ -23,10 +25,25 @@ export default function CalendarPage() {
 
 		if (status === 'authenticated' && session?.user) {
 			setLoading(true);
-			fetch('/api/posts')
-				.then((res) => res.json())
+			setError(null);
+			fetch(`${config.apiUrl}/posts`, {
+				headers: {
+					'Content-Type': 'application/json',
+				},
+				credentials: 'include',
+			})
+				.then(async (res) => {
+					if (!res.ok) {
+						const errorData = await res.json();
+						throw new Error(errorData.message || 'Failed to fetch posts');
+					}
+					return res.json();
+				})
 				.then((data) => setPosts(data))
-				.catch((error) => console.error('Error fetching posts:', error))
+				.catch((error) => {
+					console.error('Error fetching posts:', error);
+					setError(error.message);
+				})
 				.finally(() => setLoading(false));
 		}
 	}, [status, session, router]);
@@ -34,7 +51,15 @@ export default function CalendarPage() {
 	if (status === 'loading' || loading) {
 		return (
 			<div className="flex items-center justify-center min-h-screen">
-				<div className="text-lg">Loading...</div>
+				<div className="text-lg animate-pulse">Loading...</div>
+			</div>
+		);
+	}
+
+	if (error) {
+		return (
+			<div className="flex items-center justify-center min-h-screen">
+				<div className="text-red-500">Error: {error}</div>
 			</div>
 		);
 	}
@@ -51,21 +76,25 @@ export default function CalendarPage() {
 					<PostEditor
 						onSave={async (post) => {
 							try {
-								const response = await fetch('/api/posts', {
+								const response = await fetch(`${config.apiUrl}/posts`, {
 									method: 'POST',
 									headers: {
 										'Content-Type': 'application/json',
 									},
+									credentials: 'include',
 									body: JSON.stringify(post),
 								});
-								if (response.ok) {
-									const newPost = await response.json();
-									setPosts([...posts, newPost]);
-								} else {
-									console.error('Failed to create post:', await response.text());
+
+								if (!response.ok) {
+									const errorData = await response.json();
+									throw new Error(errorData.message || 'Failed to create post');
 								}
+
+								const newPost = await response.json();
+								setPosts([...posts, newPost]);
 							} catch (error) {
 								console.error('Error creating post:', error);
+								setError(error instanceof Error ? error.message : 'Failed to create post');
 							}
 						}}
 					/>
