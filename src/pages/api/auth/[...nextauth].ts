@@ -4,7 +4,15 @@ import CredentialsProvider from 'next-auth/providers/credentials';
 import User from '../../../models/User';
 import dbConnect from '../../../lib/mongo';
 
+// Ensure NEXTAUTH_URL is properly set
+const productionURL = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : process.env.NEXTAUTH_URL;
+
+if (!productionURL) {
+	console.error('Please set NEXTAUTH_URL or VERCEL_URL environment variable');
+}
+
 export const authOptions: NextAuthOptions = {
+	debug: process.env.NODE_ENV === 'development',
 	providers: [
 		CredentialsProvider({
 			name: 'Credentials',
@@ -84,7 +92,8 @@ export const authOptions: NextAuthOptions = {
 	},
 	pages: {
 		signIn: '/auth/signin',
-		error: '/auth/signin', // Redirect to signin page on errors
+		error: '/auth/signin',
+		signOut: '/auth/signin',
 	},
 };
 
