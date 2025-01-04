@@ -4,5 +4,8 @@
 			"source": "/(.*)",
 			"destination": "/"
 		}
-	]
+	],
+	"buildCommand": "next build",
+	"outputDirectory": ".next",
+	"framework": "nextjs"
 }
