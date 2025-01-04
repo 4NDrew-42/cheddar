@@ -1,68 +1,62 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import bcrypt from 'bcryptjs';
-import dbConnect from '@/lib/mongo';
-import UserModel from '@/models/User';
+import dbConnect from '../../../../lib/mongo';
+import UserModel from '../../../../models/User';
 
 // Input validation schema
 const signupSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(8),
+	email: z.string().email(),
+	password: z.string().min(8),
 });
 
 export async function POST(req: Request) {
-  try {
-    const body = await req.json();
-    
-    // Validate input
-    const result = signupSchema.safeParse(body);
-    if (!result.success) {
-      return NextResponse.json(
-        { 
-          message: 'Validation failed',
-          errors: result.error.errors 
-        },
-        { status: 400 }
-      );
-    }
+	try {
+		const body = await req.json();
 
-    const { email, password } = result.data;
+		// Validate input
+		const result = signupSchema.safeParse(body);
+		if (!result.success) {
+			return NextResponse.json(
+				{
+					message: 'Validation failed',
+					errors: result.error.errors,
+				},
+				{ status: 400 }
+			);
+		}
 
-    // Connect to database
-    await dbConnect();
+		const { email, password } = result.data;
 
-    // Check if user already exists
-    const existingUser = await UserModel.findOne({ email });
-    if (existingUser) {
-      return NextResponse.json(
-        { message: 'User already exists' },
-        { status: 400 }
-      );
-    }
+		// Connect to database
+		await dbConnect();
 
-    // Hash password
-    const hashedPassword = await bcrypt.hash(password, 10);
+		// Check if user already exists
+		const existingUser = await UserModel.findOne({ email });
+		if (existingUser) {
+			return NextResponse.json({ message: 'User already exists' }, { status: 400 });
+		}
 
-    // Create new user
-    const user = await UserModel.create({
-      email,
-      password: hashedPassword,
-      role: 'user',
-      createdAt: new Date(),
-    });
+		// Hash password
+		const hashedPassword = await bcrypt.hash(password, 10);
 
-    return NextResponse.json(
-      {
-        message: 'User created',
-        userId: user._id.toString(),
-      },
-      { status: 201 }
-    );
-  } catch (error) {
-    console.error('Signup error:', error);
-    return NextResponse.json(
-      { message: 'Internal server error' },
-      { status: 500 }
-    );
-  }
+		// Create new user
+		const user = await UserModel.create({
+			email,
+			password: hashedPassword,
+			role: 'user',
+			createdAt: new Date(),
+		});
+
+		return NextResponse.json(
+			{
+				message: 'User created',
+				userId: user._id.toString(),
+			},
+			{ status: 201 }
+		);
+	} catch (error) {
+		console.error('Signup error:', error);
+		return NextResponse.json({ message: 'Internal server error' }, { status: 500 });
+	}
 }
