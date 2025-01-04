@@ -1,22 +1,9 @@
-import NextAuth, { NextAuthOptions, DefaultSession } from 'next-auth';
+import NextAuth, { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import { MongoDBAdapter } from '@next-auth/mongodb-adapter';
 import { MongoClient } from 'mongodb';
 import User from '../../../models/User';
 import bcrypt from 'bcryptjs';
-
-declare module 'next-auth' {
-	interface Session {
-		user: {
-			id: string;
-		} & DefaultSession['user'];
-	}
-
-	interface User {
-		id: string;
-		email: string;
-	}
-}
 
 const uri = process.env.MONGODB_URI;
 if (!uri) {
@@ -70,6 +57,9 @@ export const authOptions: NextAuthOptions = {
 			}
 			return session;
 		},
+	},
+	pages: {
+		signIn: '/auth/signin',
 	},
 };
 
