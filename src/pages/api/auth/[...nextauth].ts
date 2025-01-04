@@ -1,24 +1,16 @@
+// src/pages/api/auth/[...nextauth].ts
 import NextAuth, { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
-import { MongoDBAdapter } from '@next-auth/mongodb-adapter';
-import { MongoClient } from 'mongodb';
 import User from '../../../models/User';
 import bcrypt from 'bcryptjs';
-
-const uri = process.env.MONGODB_URI;
-if (!uri) {
-	throw new Error('Please define the MONGODB_URI environment variable');
-}
-
-const clientPromise = MongoClient.connect(uri);
+import dbConnect from '../../../lib/mongo';
 
 export const authOptions: NextAuthOptions = {
-	adapter: MongoDBAdapter(clientPromise),
 	providers: [
 		CredentialsProvider({
 			name: 'Credentials',
 			credentials: {
-				email: { label: 'Email', type: 'text' },
+				email: { label: 'Email', type: 'text', placeholder: 'your-email@example.com' },
 				password: { label: 'Password', type: 'password' },
 			},
 			async authorize(credentials) {
@@ -26,16 +18,22 @@ export const authOptions: NextAuthOptions = {
 					throw new Error('Email and password are required');
 				}
 
+				// Connect to the database
+				await dbConnect();
+
+				// Find the user by email
 				const user = await User.findOne({ email: credentials.email });
 				if (!user) {
 					throw new Error('User not found');
 				}
 
+				// Compare the provided password with the stored hashed password
 				const isValid = await bcrypt.compare(credentials.password, user.password);
 				if (!isValid) {
 					throw new Error('Invalid password');
 				}
 
+				// Return the user object
 				return { id: user._id.toString(), email: user.email };
 			},
 		}),
@@ -59,7 +57,7 @@ export const authOptions: NextAuthOptions = {
 		},
 	},
 	pages: {
-		signIn: '/auth/signin',
+		signIn: '/auth/signin', // Ensure this page exists
 	},
 };
 

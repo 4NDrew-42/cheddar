@@ -1,3 +1,4 @@
+// src/lib/mongo.ts
 import mongoose, { Mongoose } from 'mongoose';
 
 declare global {
