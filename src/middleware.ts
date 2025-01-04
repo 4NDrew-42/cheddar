@@ -1,22 +1,21 @@
 import { withAuth } from 'next-auth/middleware';
+import { NextResponse } from 'next/server';
 
-export default withAuth({
-	callbacks: {
-		authorized: ({ token, req }) => {
-			const isAuth = !!token;
-			const isApiRoute = req.nextUrl.pathname.startsWith('/api');
-
-			// Allow public API routes (if any)
-			if (isApiRoute && (!req.nextUrl.pathname.startsWith('/api/posts') || req.nextUrl.pathname.startsWith('/api/db-test'))) {
-				return true;
-			}
-
-			// Require authentication for protected routes
-			return isAuth;
-		},
+export default withAuth(
+	function middleware() {
+		// Add custom middleware logic here if needed
+		return NextResponse.next();
 	},
-});
+	{
+		callbacks: {
+			authorized: ({ token }) => !!token,
+		},
+		pages: {
+			signIn: '/auth/signin',
+		},
+	}
+);
 
 export const config = {
-	matcher: ['/calendar/:path*', '/api/posts/:path*'],
+	matcher: ['/dashboard/:path*', '/api/dashboard/:path*'],
 };

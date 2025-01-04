@@ -1,7 +1,7 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { getSession } from 'next-auth/react';
 import dbConnect from '../../../lib/mongo';
-import Post from '../../../models/Post';
+import { Post } from '../../../models/Post';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
 	try {

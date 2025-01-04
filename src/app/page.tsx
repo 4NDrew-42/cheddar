@@ -1,19 +1,101 @@
-'use client';
+import Header from '../components/layout/Header';
+import Footer from '../components/layout/Footer';
 import Link from 'next/link';
 
-export default function HomePage() {
-	return (
-		<main className="flex flex-col items-center justify-center min-h-screen bg-white text-black p-8">
-			<h1 className="text-3xl font-bold mb-4">Welcome to My Homepage</h1>
-			<p className="text-center max-w-md mb-6 leading-relaxed">This is a custom landing page. Use it to introduce yourself, your product, or any other content you’d like your visitors to see first.</p>
-			<div className="flex gap-4">
-				<Link href="/calendar" className="py-2 px-4 bg-indigo-600 text-white rounded hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-400">
-					Go to Calendar
-				</Link>
-				<Link href="https://nextjs.org/docs" target="_blank" className="py-2 px-4 bg-gray-300 text-black rounded hover:bg-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400">
-					Next.js Docs
-				</Link>
-			</div>
-		</main>
-	);
+export default function Home() {
+  return (
+    <div>
+      <Header />
+      
+      {/* Hero Section */}
+      <section className="pt-20 pb-16 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <h1 className="text-4xl tracking-tight font-extrabold text-gray-900 sm:text-5xl md:text-6xl">
+              <span className="block">Social Content Made Simple</span>
+              <span className="block text-blue-600">AI-Powered Scheduling</span>
+            </h1>
+            <p className="mt-3 max-w-md mx-auto text-base text-gray-500 sm:text-lg md:mt-5 md:text-xl md:max-w-3xl">
+              Create, schedule, and analyze your social media content with AI assistance. 
+              Save time and boost engagement across all your platforms.
+            </p>
+            <div className="mt-5 max-w-md mx-auto sm:flex sm:justify-center md:mt-8">
+              <div className="rounded-md shadow">
+                <Link
+                  href="/auth/signup"
+                  className="w-full flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 md:py-4 md:text-lg md:px-10"
+                >
+                  Get Started
+                </Link>
+              </div>
+              <div className="mt-3 rounded-md shadow sm:mt-0 sm:ml-3">
+                <Link
+                  href="/calendar"
+                  className="w-full flex items-center justify-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-blue-600 bg-white hover:bg-gray-50 md:py-4 md:text-lg md:px-10"
+                >
+                  Try Demo
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Features Section */}
+      <section className="py-16 bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {/* Feature 1 */}
+            <div className="p-6 bg-white rounded-lg shadow">
+              <div className="text-blue-600 text-2xl mb-4">⚡</div>
+              <h3 className="text-lg font-medium text-gray-900">AI-Powered Creation</h3>
+              <p className="mt-2 text-gray-500">
+                Generate engaging content with AI assistance. Perfect your message every time.
+              </p>
+            </div>
+
+            {/* Feature 2 */}
+            <div className="p-6 bg-white rounded-lg shadow">
+              <div className="text-blue-600 text-2xl mb-4">📅</div>
+              <h3 className="text-lg font-medium text-gray-900">Smart Scheduling</h3>
+              <p className="mt-2 text-gray-500">
+                Schedule posts at optimal times. Let AI maximize your engagement.
+              </p>
+            </div>
+
+            {/* Feature 3 */}
+            <div className="p-6 bg-white rounded-lg shadow">
+              <div className="text-blue-600 text-2xl mb-4">📊</div>
+              <h3 className="text-lg font-medium text-gray-900">Analytics & Insights</h3>
+              <p className="mt-2 text-gray-500">
+                Track performance and get AI-powered recommendations for improvement.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      <section className="bg-blue-600">
+        <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:py-16 lg:px-8">
+          <h2 className="text-3xl font-extrabold tracking-tight text-white sm:text-4xl">
+            <span className="block">Ready to get started?</span>
+            <span className="block text-blue-200">Try Cheddar free for 14 days.</span>
+          </h2>
+          <div className="mt-8 flex lg:mt-0 lg:flex-shrink-0">
+            <div className="inline-flex rounded-md shadow">
+              <Link
+                href="/auth/signup"
+                className="inline-flex items-center justify-center px-5 py-3 border border-transparent text-base font-medium rounded-md text-blue-600 bg-white hover:bg-blue-50"
+              >
+                Get started
+              </Link>
+            </div>
+          </div>
+        </div>
+      </section>
+      
+      <Footer />
+    </div>
+  );
 }

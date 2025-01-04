@@ -1,30 +1,36 @@
-import mongoose from 'mongoose';
+import mongoose, { Schema } from 'mongoose';
 
-export interface Post extends mongoose.Document {
+export interface IPost {
 	_id: string;
-	userId: mongoose.Schema.Types.ObjectId;
+	id: string;
 	title: string;
-	copy: string;
-	mediaUrl: string;
-	mediaType: string;
-	platform: string[];
+	content: string;
 	date: Date;
-	status: string;
+	scheduledAt: Date;
+	timeZone: string;
+	platforms: ('twitter' | 'linkedin' | 'facebook')[];
+	status: 'draft' | 'scheduled' | 'published' | 'failed';
+	createdAt: Date;
+	updatedAt: Date;
+	userId: string;
 }
 
-const PostSchema = new mongoose.Schema({
-	userId: {
-		type: mongoose.Schema.Types.ObjectId,
-		ref: 'User',
-		required: true,
+const PostSchema = new Schema<IPost>(
+	{
+		title: { type: String, required: true },
+		content: { type: String, required: true },
+		date: { type: Date, required: true },
+		scheduledAt: { type: Date, required: true },
+		timeZone: { type: String, required: true },
+		platforms: [{ type: String, enum: ['twitter', 'linkedin', 'facebook'] }],
+		status: {
+			type: String,
+			enum: ['draft', 'scheduled', 'published', 'failed'],
+			default: 'draft',
+		},
+		userId: { type: String, required: true },
 	},
-	title: { type: String, required: true },
-	copy: { type: String, default: '' },
-	mediaUrl: { type: String, default: '' },
-	mediaType: { type: String, enum: ['image', 'video'], default: 'image' },
-	platform: { type: [String], default: [] },
-	date: { type: Date, default: Date.now },
-	status: { type: String, enum: ['Draft', 'Scheduled', 'Published'], default: 'Draft' },
-});
+	{ timestamps: true }
+);
 
-export default mongoose.models.Post || mongoose.model('Post', PostSchema);
+export const Post = mongoose.models.Post || mongoose.model<IPost>('Post', PostSchema);

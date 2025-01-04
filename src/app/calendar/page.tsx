@@ -6,16 +6,22 @@ import PostEditor from '../../components/PostEditor';
 import { useEffect, useState } from 'react';
 import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
-import type { Post } from '../../models/Post';
+import type { IPost } from '../../models/Post';
 import { useRouter } from 'next/navigation';
 import { config } from '../../lib/config';
+import { getUserTimeZone, toUserTimeZone, formatWithTimeZone } from '../../lib/utils/dateUtils';
 
 export default function CalendarPage() {
 	const { data: session, status } = useSession();
-	const [posts, setPosts] = useState<Post[]>([]);
+	const [posts, setPosts] = useState<IPost[]>([]);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
+	const [timeZone, setTimeZone] = useState('');
 	const router = useRouter();
+
+	useEffect(() => {
+		setTimeZone(getUserTimeZone());
+	}, []);
 
 	useEffect(() => {
 		if (status === 'unauthenticated') {
@@ -100,18 +106,23 @@ export default function CalendarPage() {
 					/>
 				</div>
 				<Calendar
-					tileContent={({ date }) => {
-						const postDates = posts.map((post) => new Date(post.date).toDateString());
-						return postDates.includes(date.toDateString()) ? <div className="w-1 h-1 bg-blue-500 rounded-full mx-auto" /> : null;
-					}}
-				/>
+				tileContent={({ date }) => {
+					const postDates = posts.map((post) =>
+						toUserTimeZone(new Date(post.date), timeZone).toDateString()
+					);
+					return postDates.includes(date.toDateString()) ?
+						<div className="w-1 h-1 bg-blue-500 rounded-full mx-auto" /> : null;
+				}}
+			/>
 				<div>
 					<h2 className="text-xl font-semibold mb-4">Scheduled Posts</h2>
 					<div className="space-y-4">
-						{posts.map((post: Post & { _id: string }) => (
+						{posts.map((post: IPost & { _id: string }) => (
 							<div key={post._id} className="p-4 border rounded-lg">
 								<h3 className="font-medium">{post.title}</h3>
-								<p className="text-sm text-gray-600">{new Date(post.date).toLocaleString()}</p>
+								<p className="text-sm text-gray-600">
+									{formatWithTimeZone(new Date(post.date), 'MMM d, yyyy h:mm a', timeZone)}
+								</p>
 							</div>
 						))}
 					</div>

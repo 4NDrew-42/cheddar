@@ -1,22 +1,23 @@
-'use client';
+ 'use client';
 
-import { useState } from 'react';
-import type { Post } from '../models/Post';
+import { useState, useEffect } from 'react';
+import type { IPost } from '../models/Post';
+import { getUserTimeZone, toUserTimeZone } from '../lib/utils/dateUtils';
 
 interface PostEditorProps {
-	post?: Post;
-	onSave: (post: Partial<Post>) => Promise<void>;
+	post?: IPost;
+	onSave: (post: Partial<IPost>) => Promise<void>;
 }
 
 export default function PostEditor({ post, onSave }: PostEditorProps) {
-	const [formData, setFormData] = useState<Partial<Post>>({
+	const [formData, setFormData] = useState<Partial<IPost>>({
 		title: post?.title || '',
-		copy: post?.copy || '',
-		mediaUrl: post?.mediaUrl || '',
-		mediaType: post?.mediaType || 'image',
-		platform: post?.platform || [],
+		content: post?.content || '',
+		platforms: post?.platforms || [],
 		date: post?.date || new Date(),
-		status: post?.status || 'Draft',
+		scheduledAt: post?.scheduledAt || new Date(),
+		timeZone: post?.timeZone || getUserTimeZone(),
+		status: post?.status || 'draft',
 	});
 
 	const handleSubmit = async (e: React.FormEvent) => {
@@ -33,31 +34,34 @@ export default function PostEditor({ post, onSave }: PostEditorProps) {
 
 			<div>
 				<label className="block text-sm font-medium mb-1">Content</label>
-				<textarea value={formData.copy} onChange={(e) => setFormData({ ...formData, copy: e.target.value })} className="w-full p-2 border rounded" rows={4} />
-			</div>
-
-			<div>
-				<label className="block text-sm font-medium mb-1">Media URL</label>
-				<input type="url" value={formData.mediaUrl} onChange={(e) => setFormData({ ...formData, mediaUrl: e.target.value })} className="w-full p-2 border rounded" />
-			</div>
-
-			<div>
-				<label className="block text-sm font-medium mb-1">Media Type</label>
-				<select value={formData.mediaType} onChange={(e) => setFormData({ ...formData, mediaType: e.target.value })} className="w-full p-2 border rounded">
-					<option value="image">Image</option>
-					<option value="video">Video</option>
-				</select>
+				<textarea
+					value={formData.content}
+					onChange={(e) => setFormData({ ...formData, content: e.target.value })}
+					className="w-full p-2 border rounded"
+					rows={4}
+				/>
 			</div>
 
 			<div>
 				<label className="block text-sm font-medium mb-1">Platforms</label>
-				<input
-					type="text"
-					value={formData.platform?.join(', ')}
-					onChange={(e) => setFormData({ ...formData, platform: e.target.value.split(',').map((p) => p.trim()) })}
-					className="w-full p-2 border rounded"
-					placeholder="Comma separated platforms"
-				/>
+				<div className="space-y-2">
+					{['twitter', 'linkedin', 'facebook'].map((platform) => (
+						<label key={platform} className="flex items-center space-x-2">
+							<input
+								type="checkbox"
+								checked={formData.platforms?.includes(platform as 'twitter' | 'linkedin' | 'facebook')}
+								onChange={(e) => {
+									const platforms = formData.platforms || [];
+									const updatedPlatforms = e.target.checked
+										? [...platforms, platform as 'twitter' | 'linkedin' | 'facebook']
+										: platforms.filter(p => p !== platform);
+									setFormData({ ...formData, platforms: updatedPlatforms });
+								}}
+							/>
+							<span>{platform.charAt(0).toUpperCase() + platform.slice(1)}</span>
+						</label>
+					))}
+				</div>
 			</div>
 
 			<div>
@@ -65,17 +69,26 @@ export default function PostEditor({ post, onSave }: PostEditorProps) {
 				<input
 					type="datetime-local"
 					value={formData.date ? new Date(formData.date).toISOString().slice(0, 16) : ''}
-					onChange={(e) => setFormData({ ...formData, date: new Date(e.target.value) })}
+					onChange={(e) => {
+						const localDate = new Date(e.target.value);
+						const utcDate = toUserTimeZone(localDate, formData.timeZone || getUserTimeZone());
+						setFormData({ ...formData, date: utcDate });
+					}}
 					className="w-full p-2 border rounded"
 				/>
 			</div>
 
 			<div>
 				<label className="block text-sm font-medium mb-1">Status</label>
-				<select value={formData.status} onChange={(e) => setFormData({ ...formData, status: e.target.value })} className="w-full p-2 border rounded">
-					<option value="Draft">Draft</option>
-					<option value="Scheduled">Scheduled</option>
-					<option value="Published">Published</option>
+				<select
+					value={formData.status}
+					onChange={(e) => setFormData({ ...formData, status: e.target.value as IPost['status'] })}
+					className="w-full p-2 border rounded"
+				>
+					<option value="draft">Draft</option>
+					<option value="scheduled">Scheduled</option>
+					<option value="published">Published</option>
+					<option value="failed">Failed</option>
 				</select>
 			</div>
 

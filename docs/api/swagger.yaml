@@ -1,0 +1,392 @@
+openapi: 3.0.0
+info:
+ title: Cheddar API
+ version: 1.0.0
+ description: API documentation for Cheddar social media scheduler
+
+servers:
+ - url: /api
+   description: API base URL
+
+components:
+ securitySchemes:
+  sessionAuth:
+   type: apiKey
+   in: cookie
+   name: __Secure-next-auth.session-token
+   description: Session token cookie set by NextAuth.js
+
+ schemas:
+  SignupRequest:
+   type: object
+   required:
+    - email
+    - password
+   properties:
+    email:
+     type: string
+     format: email
+     example: user@example.com
+    password:
+     type: string
+     format: password
+     minLength: 8
+     example: strongpassword123
+
+  SignupResponse:
+   type: object
+   properties:
+    message:
+     type: string
+     example: User created
+    userId:
+     type: string
+     example: 507f1f77bcf86cd799439011
+
+  SigninRequest:
+   type: object
+   required:
+    - email
+    - password
+   properties:
+    email:
+     type: string
+     format: email
+     example: user@example.com
+    password:
+     type: string
+     format: password
+     example: strongpassword123
+
+  Post:
+   type: object
+   required:
+    - title
+    - content
+    - date
+    - scheduledAt
+    - timeZone
+    - platforms
+   properties:
+    _id:
+     type: string
+     example: 507f1f77bcf86cd799439011
+    title:
+     type: string
+     example: My First Post
+    content:
+     type: string
+     example: This is the content of my post
+    date:
+     type: string
+     format: date-time
+    scheduledAt:
+     type: string
+     format: date-time
+    timeZone:
+     type: string
+     example: America/Chicago
+    platforms:
+     type: array
+     items:
+      type: string
+      enum: [twitter, linkedin, facebook]
+    status:
+     type: string
+     enum: [draft, scheduled, published, failed]
+     default: draft
+    createdAt:
+     type: string
+     format: date-time
+    updatedAt:
+     type: string
+     format: date-time
+    userId:
+     type: string
+     example: 507f1f77bcf86cd799439011
+
+  Error:
+   type: object
+   properties:
+    message:
+     type: string
+     example: Error message
+    errors:
+     type: array
+     items:
+      type: object
+      properties:
+       path:
+        type: array
+        items:
+         type: string
+       message:
+        type: string
+
+paths:
+ /posts/{id}:
+  get:
+   summary: Get post by ID
+   tags:
+    - Posts
+   security:
+    - sessionAuth: []
+   parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+       type: string
+      description: Post ID
+   responses:
+    '200':
+     description: Post details
+     content:
+      application/json:
+       schema:
+        $ref: '#/components/schemas/Post'
+    '404':
+     description: Post not found
+     content:
+      application/json:
+       schema:
+        $ref: '#/components/schemas/Error'
+    '401':
+     description: Unauthorized
+     content:
+      application/json:
+       schema:
+        $ref: '#/components/schemas/Error'
+
+  patch:
+   summary: Update post
+   tags:
+    - Posts
+   security:
+    - sessionAuth: []
+   parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+       type: string
+      description: Post ID
+   requestBody:
+    required: true
+    content:
+     application/json:
+      schema:
+       $ref: '#/components/schemas/Post'
+   responses:
+    '200':
+     description: Post updated successfully
+     content:
+      application/json:
+       schema:
+        $ref: '#/components/schemas/Post'
+    '404':
+     description: Post not found
+     content:
+      application/json:
+       schema:
+        $ref: '#/components/schemas/Error'
+    '401':
+     description: Unauthorized
+     content:
+      application/json:
+       schema:
+        $ref: '#/components/schemas/Error'
+
+  delete:
+   summary: Delete post
+   tags:
+    - Posts
+   security:
+    - sessionAuth: []
+   parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+       type: string
+      description: Post ID
+   responses:
+    '200':
+     description: Post deleted successfully
+     content:
+      application/json:
+       schema:
+        type: object
+        properties:
+         message:
+          type: string
+          example: Post deleted successfully
+    '404':
+     description: Post not found
+     content:
+      application/json:
+       schema:
+        $ref: '#/components/schemas/Error'
+    '401':
+     description: Unauthorized
+     content:
+      application/json:
+       schema:
+        $ref: '#/components/schemas/Error'
+
+ /posts/schedule:
+  post:
+   summary: Schedule a post
+   tags:
+    - Posts
+   security:
+    - sessionAuth: []
+   requestBody:
+    required: true
+    content:
+     application/json:
+      schema:
+       $ref: '#/components/schemas/Post'
+   responses:
+    '201':
+     description: Post scheduled successfully
+     content:
+      application/json:
+       schema:
+        $ref: '#/components/schemas/Post'
+    '400':
+     description: Invalid request
+     content:
+      application/json:
+       schema:
+        $ref: '#/components/schemas/Error'
+    '401':
+     description: Unauthorized
+     content:
+      application/json:
+       schema:
+        $ref: '#/components/schemas/Error'
+
+ /auth/signup:
+  post:
+   summary: Create new user account
+   tags:
+    - Authentication
+   requestBody:
+    required: true
+    content:
+     application/json:
+      schema:
+       $ref: '#/components/schemas/SignupRequest'
+   responses:
+    '201':
+     description: User created successfully
+     content:
+      application/json:
+       schema:
+        $ref: '#/components/schemas/SignupResponse'
+    '400':
+     description: Validation error or user already exists
+     content:
+      application/json:
+       schema:
+        $ref: '#/components/schemas/Error'
+    '500':
+     description: Internal server error
+     content:
+      application/json:
+       schema:
+        $ref: '#/components/schemas/Error'
+
+ /auth/signin:
+  post:
+   summary: Authenticate user
+   tags:
+    - Authentication
+   requestBody:
+    required: true
+    content:
+     application/json:
+      schema:
+       $ref: '#/components/schemas/SigninRequest'
+   responses:
+    '200':
+     description: Authentication successful
+     headers:
+      Set-Cookie:
+       schema:
+        type: string
+        description: Session cookie
+    '401':
+     description: Authentication failed
+     content:
+      application/json:
+       schema:
+        $ref: '#/components/schemas/Error'
+    '500':
+     description: Internal server error
+     content:
+      application/json:
+       schema:
+        $ref: '#/components/schemas/Error'
+
+ /posts:
+  get:
+   summary: List user's posts
+   tags:
+    - Posts
+   security:
+    - sessionAuth: []
+   responses:
+    '200':
+     description: List of posts
+     content:
+      application/json:
+       schema:
+        type: array
+        items:
+         $ref: '#/components/schemas/Post'
+    '401':
+     description: Unauthorized
+     content:
+      application/json:
+       schema:
+        $ref: '#/components/schemas/Error'
+    '500':
+     description: Internal server error
+     content:
+      application/json:
+       schema:
+        $ref: '#/components/schemas/Error'
+
+  post:
+   summary: Create new post
+   tags:
+    - Posts
+   security:
+    - sessionAuth: []
+   requestBody:
+    required: true
+    content:
+     application/json:
+      schema:
+       $ref: '#/components/schemas/Post'
+   responses:
+    '201':
+     description: Post created successfully
+     content:
+      application/json:
+       schema:
+        $ref: '#/components/schemas/Post'
+    '401':
+     description: Unauthorized
+     content:
+      application/json:
+       schema:
+        $ref: '#/components/schemas/Error'
+    '500':
+     description: Internal server error
+     content:
+      application/json:
+       schema:
+        $ref: '#/components/schemas/Error'
