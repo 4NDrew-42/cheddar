@@ -1,10 +1,67 @@
 // src/models/User.ts
 import mongoose from 'mongoose';
+import bcrypt from 'bcryptjs';
 
-const UserSchema = new mongoose.Schema({
-	email: { type: String, required: true, unique: true },
-	password: { type: String, required: true },
-	// Add any additional fields, e.g., name, role, etc.
+export interface IUser extends mongoose.Document {
+	email: string;
+	password: string;
+	name?: string;
+	role: 'user' | 'admin';
+	createdAt: Date;
+	updatedAt: Date;
+}
+
+const UserSchema = new mongoose.Schema(
+	{
+		email: {
+			type: String,
+			required: [true, 'Email is required'],
+			unique: true,
+			lowercase: true,
+			trim: true,
+			match: [/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/, 'Please enter a valid email address'],
+			index: true,
+		},
+		password: {
+			type: String,
+			required: [true, 'Password is required'],
+			minlength: [8, 'Password must be at least 8 characters long'],
+		},
+		name: {
+			type: String,
+			trim: true,
+		},
+		role: {
+			type: String,
+			enum: ['user', 'admin'],
+			default: 'user',
+		},
+	},
+	{
+		timestamps: true, // Adds createdAt and updatedAt fields
+	}
+);
+
+// Index for faster queries
+UserSchema.index({ email: 1 });
+
+// Pre-save middleware to hash password
+UserSchema.pre('save', async function (next) {
+	if (!this.isModified('password')) {
+		return next();
+	}
+	try {
+		const salt = await bcrypt.genSalt(10);
+		this.password = await bcrypt.hash(this.password, salt);
+		next();
+	} catch (error) {
+		next(error as Error);
+	}
 });
 
-export default mongoose.models.User || mongoose.model('User', UserSchema);
+// Method to validate password
+UserSchema.methods.comparePassword = async function (candidatePassword: string): Promise<boolean> {
+	return bcrypt.compare(candidatePassword, this.password);
+};
+
+export default mongoose.models.User || mongoose.model<IUser>('User', UserSchema);
