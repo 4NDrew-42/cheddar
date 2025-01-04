@@ -1,7 +1,7 @@
 import { Metadata } from 'next';
 import { getServerSession } from 'next-auth';
 import { redirect } from 'next/navigation';
-import DashboardNav from '../../../components/dashboard/DashboardNav';
+import DashboardNav from '../../components/dashboard/DashboardNav';
 
 export const metadata: Metadata = {
 	title: 'Dashboard - Cheddar',
