@@ -7,7 +7,7 @@ export default withAuth({
 			const isApiRoute = req.nextUrl.pathname.startsWith('/api');
 
 			// Allow public API routes (if any)
-			if (isApiRoute && !req.nextUrl.pathname.startsWith('/api/posts')) {
+			if (isApiRoute && (!req.nextUrl.pathname.startsWith('/api/posts') || req.nextUrl.pathname.startsWith('/api/db-test'))) {
 				return true;
 			}
 
