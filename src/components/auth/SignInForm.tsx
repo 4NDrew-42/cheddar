@@ -25,16 +25,25 @@ export default function SignInForm({
 		const password = formData.get('password') as string;
 
 		try {
+			console.log('Attempting sign in with:', { email, callbackUrl });
 			const result = await signIn('credentials', {
 				email,
 				password,
-				redirect: true,
+				redirect: false, // Change to false to handle redirect manually
 				callbackUrl
 			});
 
-			// Note: With redirect: true, the code below won't execute unless there's an error
+			console.log('Sign in result:', result);
+
 			if (result?.error) {
 				setError(result.error);
+			} else if (result?.url) {
+				// Manually handle the redirect
+				console.log('Redirecting to:', result.url);
+				router.push(result.url);
+			} else {
+				console.log('Fallback redirect to:', callbackUrl);
+				router.push(callbackUrl);
 			}
 		} catch (error) {
 			console.error('Sign in error:', error);

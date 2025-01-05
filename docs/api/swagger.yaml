@@ -17,93 +17,62 @@ components:
    description: Session token cookie set by NextAuth.js
 
  schemas:
-  SignupRequest:
+  Task:
    type: object
    required:
-    - email
-    - password
+    - type
+    - priority
    properties:
-    email:
-     type: string
-     format: email
-     example: user@example.com
-    password:
-     type: string
-     format: password
-     minLength: 8
-     example: strongpassword123
-
-  SignupResponse:
-   type: object
-   properties:
-    message:
-     type: string
-     example: User created
-    userId:
+    id:
      type: string
      example: 507f1f77bcf86cd799439011
-
-  SigninRequest:
-   type: object
-   required:
-    - email
-    - password
-   properties:
-    email:
+    type:
      type: string
-     format: email
-     example: user@example.com
-    password:
-     type: string
-     format: password
-     example: strongpassword123
-
-  Post:
-   type: object
-   required:
-    - title
-    - content
-    - date
-    - scheduledAt
-    - timeZone
-    - platforms
-   properties:
-    _id:
-     type: string
-     example: 507f1f77bcf86cd799439011
-    title:
-     type: string
-     example: My First Post
-    content:
-     type: string
-     example: This is the content of my post
-    date:
-     type: string
-     format: date-time
-    scheduledAt:
-     type: string
-     format: date-time
-    timeZone:
-     type: string
-     example: America/Chicago
-    platforms:
-     type: array
-     items:
-      type: string
-      enum: [twitter, linkedin, facebook]
+     enum: [copy, image, review]
+     example: copy
+    priority:
+     type: integer
+     minimum: 1
+     maximum: 3
+     example: 2
     status:
      type: string
-     enum: [draft, scheduled, published, failed]
-     default: draft
+     enum: [pending, processing, completed, failed]
+     example: pending
     createdAt:
      type: string
      format: date-time
     updatedAt:
      type: string
      format: date-time
-    userId:
+
+  Provider:
+   type: object
+   required:
+    - name
+    - capabilities
+   properties:
+    id:
      type: string
      example: 507f1f77bcf86cd799439011
+    name:
+     type: string
+     example: Twitter API
+    capabilities:
+     type: array
+     items:
+      type: string
+     example: [post, schedule, analytics]
+    status:
+     type: string
+     enum: [active, degraded, inactive]
+     example: active
+    createdAt:
+     type: string
+     format: date-time
+    updatedAt:
+     type: string
+     format: date-time
 
   Error:
    type: object
@@ -124,11 +93,190 @@ components:
         type: string
 
 paths:
+ /tasks:
+  post:
+   summary: Create new task
+   tags: [Tasks]
+   security:
+    - sessionAuth: []
+   requestBody:
+    required: true
+    content:
+     application/json:
+      schema:
+       type: object
+       properties:
+        type:
+         type: string
+         enum: [copy, image, review]
+        priority:
+         type: integer
+         minimum: 1
+         maximum: 3
+   responses:
+    '201':
+     description: Task created successfully
+     content:
+      application/json:
+       schema:
+        $ref: '#/components/schemas/Task'
+    '400':
+     description: Invalid request
+     content:
+      application/json:
+       schema:
+        $ref: '#/components/schemas/Error'
+    '401':
+     description: Unauthorized
+     content:
+      application/json:
+       schema:
+        $ref: '#/components/schemas/Error'
+
+ /tasks/{id}:
+  get:
+   summary: Get task by ID
+   tags: [Tasks]
+   security:
+    - sessionAuth: []
+   parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+       type: string
+   responses:
+    '200':
+     description: Task details
+     content:
+      application/json:
+       schema:
+        $ref: '#/components/schemas/Task'
+    '404':
+     description: Task not found
+     content:
+      application/json:
+       schema:
+        $ref: '#/components/schemas/Error'
+    '401':
+     description: Unauthorized
+     content:
+      application/json:
+       schema:
+        $ref: '#/components/schemas/Error'
+
+  patch:
+   summary: Update task
+   tags: [Tasks]
+   security:
+    - sessionAuth: []
+   parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+       type: string
+   requestBody:
+    required: true
+    content:
+     application/json:
+      schema:
+       $ref: '#/components/schemas/Task'
+   responses:
+    '200':
+     description: Task updated successfully
+     content:
+      application/json:
+       schema:
+        $ref: '#/components/schemas/Task'
+    '404':
+     description: Task not found
+     content:
+      application/json:
+       schema:
+        $ref: '#/components/schemas/Error'
+    '401':
+     description: Unauthorized
+     content:
+      application/json:
+       schema:
+        $ref: '#/components/schemas/Error'
+
+ /providers:
+  get:
+   summary: List all providers
+   tags: [Providers]
+   security:
+    - sessionAuth: []
+   responses:
+    '200':
+     description: List of providers
+     content:
+      application/json:
+       schema:
+        type: array
+        items:
+         $ref: '#/components/schemas/Provider'
+    '401':
+     description: Unauthorized
+     content:
+      application/json:
+       schema:
+        $ref: '#/components/schemas/Error'
+
+ /providers/{id}/status:
+  patch:
+   summary: Update provider status
+   tags: [Providers]
+   security:
+    - sessionAuth: []
+   parameters:
+    - name: id
+      in: path
+      required: true
+      schema:
+       type: string
+   requestBody:
+    required: true
+    content:
+     application/json:
+      schema:
+       type: object
+       properties:
+        status:
+         type: string
+         enum: [active, degraded, inactive]
+   responses:
+    '200':
+     description: Provider status updated
+     content:
+      application/json:
+       schema:
+        $ref: '#/components/schemas/Provider'
+    '400':
+     description: Invalid status
+     content:
+      application/json:
+       schema:
+        $ref: '#/components/schemas/Error'
+    '404':
+     description: Provider not found
+     content:
+      application/json:
+       schema:
+        $ref: '#/components/schemas/Error'
+    '401':
+     description: Unauthorized
+     content:
+      application/json:
+       schema:
+        $ref: '#/components/schemas/Error'
+
+ # Existing endpoints from original file
  /posts/{id}:
   get:
    summary: Get post by ID
-   tags:
-    - Posts
+   tags: [Posts]
    security:
     - sessionAuth: []
    parameters:
@@ -160,8 +308,7 @@ paths:
 
   patch:
    summary: Update post
-   tags:
-    - Posts
+   tags: [Posts]
    security:
     - sessionAuth: []
    parameters:
@@ -199,8 +346,7 @@ paths:
 
   delete:
    summary: Delete post
-   tags:
-    - Posts
+   tags: [Posts]
    security:
     - sessionAuth: []
    parameters:
@@ -237,8 +383,7 @@ paths:
  /posts/schedule:
   post:
    summary: Schedule a post
-   tags:
-    - Posts
+   tags: [Posts]
    security:
     - sessionAuth: []
    requestBody:
@@ -270,8 +415,7 @@ paths:
  /auth/signup:
   post:
    summary: Create new user account
-   tags:
-    - Authentication
+   tags: [Authentication]
    requestBody:
     required: true
     content:
@@ -301,8 +445,7 @@ paths:
  /auth/signin:
   post:
    summary: Authenticate user
-   tags:
-    - Authentication
+   tags: [Authentication]
    requestBody:
     required: true
     content:
@@ -333,8 +476,7 @@ paths:
  /posts:
   get:
    summary: List user's posts
-   tags:
-    - Posts
+   tags: [Posts]
    security:
     - sessionAuth: []
    responses:
@@ -361,8 +503,7 @@ paths:
 
   post:
    summary: Create new post
-   tags:
-    - Posts
+   tags: [Posts]
    security:
     - sessionAuth: []
    requestBody:

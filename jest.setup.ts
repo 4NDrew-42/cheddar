@@ -1,56 +1,41 @@
-// Set environment variables before any imports
-process.env.MONGODB_URI = 'mongodb://localhost:27017/test';
+// Import and set up expect first
+import { expect as jestExpect, jest } from '@jest/globals';
+(global as any).expect = jestExpect;
+(global as any).jest = jest;
 
-import { MongoMemoryServer } from 'mongodb-memory-server';
-import mongoose from 'mongoose';
-import { NextAuthOptions } from 'next-auth';
-import { mockDeep } from 'jest-mock-extended';
+// Then import other dependencies
+import { TextEncoder, TextDecoder } from 'util';
+import React from 'react';
 
-declare global {
-	function mockNextAuth(options?: Partial<NextAuthOptions>): ReturnType<typeof mockDeep<NextAuthOptions>>;
+// Add TextEncoder/TextDecoder polyfills
+if (typeof global.TextEncoder === 'undefined') {
+  global.TextEncoder = TextEncoder;
+}
+if (typeof global.TextDecoder === 'undefined') {
+  global.TextDecoder = TextDecoder as typeof global.TextDecoder;
 }
 
-// Mock NextAuth
+// Add React to global scope
+(global as any).React = React;
+
+// Mock next-auth
 jest.mock('next-auth', () => ({
-	__esModule: true,
-	default: jest.fn(),
-	getServerSession: jest.fn(),
+  getServerSession: jest.fn(() =>
+    Promise.resolve({
+      user: {
+        name: 'Test User',
+        email: 'test@example.com',
+      },
+    })
+  ),
 }));
 
-// MongoDB setup
-let mongod: MongoMemoryServer;
+// Import testing-library after expect is set up
+import '@testing-library/jest-dom';
+import 'jest-environment-jsdom';
 
-beforeAll(async () => {
-	mongod = await MongoMemoryServer.create();
-	const uri = mongod.getUri();
-	process.env.MONGODB_URI = uri;
-	await mongoose.connect(uri);
+// Configure React Testing Library
+beforeEach(() => {
+  // Reset all mocks before each test
+  jest.clearAllMocks();
 });
-
-afterAll(async () => {
-	await mongoose.disconnect();
-	await mongod.stop();
-});
-
-afterEach(async () => {
-	if (mongoose.connection.db) {
-		const collections = await mongoose.connection.db.collections();
-		for (const collection of collections) {
-			await collection.deleteMany({});
-		}
-	}
-});
-
-// Global mocks
-global.mockNextAuth = (options: Partial<NextAuthOptions> = {}) => {
-	const mockSession = mockDeep<NextAuthOptions>();
-	jest.spyOn(require('next-auth'), 'getServerSession').mockResolvedValue({
-		user: {
-			name: 'Test User',
-			email: 'test@example.com',
-		},
-		expires: new Date(Date.now() + 1000 * 60 * 60 * 24).toISOString(),
-		...options,
-	});
-	return mockSession;
-};

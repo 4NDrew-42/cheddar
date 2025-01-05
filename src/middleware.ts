@@ -1,9 +1,16 @@
 import { withAuth } from 'next-auth/middleware';
 import { NextResponse } from 'next/server';
+import { rateLimitMiddleware } from './middleware/rateLimit';
 
 export default withAuth(
-	function middleware() {
-		// Add custom middleware logic here if needed
+	async function middleware(request) {
+		// Apply rate limiting to all API routes
+		if (request.nextUrl.pathname.startsWith('/api')) {
+			const rateLimitResponse = await rateLimitMiddleware(request);
+			if (rateLimitResponse) return rateLimitResponse;
+		}
+
+		// Continue with auth middleware
 		return NextResponse.next();
 	},
 	{
@@ -17,5 +24,8 @@ export default withAuth(
 );
 
 export const config = {
-	matcher: ['/dashboard/:path*', '/api/dashboard/:path*'],
+	matcher: [
+		'/dashboard/:path*',
+		'/api/:path*', // Apply to all API routes
+	],
 };

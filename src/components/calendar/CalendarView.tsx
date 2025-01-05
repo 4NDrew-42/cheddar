@@ -8,7 +8,7 @@ interface CalendarViewProps {
 }
 
 export const CalendarView = ({ initialDate = new Date() }: CalendarViewProps) => {
-	const [posts, setPosts] = useState<Post[]>([]);
+	const [posts, setPosts] = useState<IPost[]>([]);
 	const [isLoading, setIsLoading] = useState(false);
 	const [error, setError] = useState<Error | null>(null);
 	const [currentDate, setCurrentDate] = useState(initialDate);

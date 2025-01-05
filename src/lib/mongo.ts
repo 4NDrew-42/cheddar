@@ -1,53 +1,18 @@
-// src/lib/mongo.ts
-import mongoose, { Mongoose } from 'mongoose';
+import mongoose from 'mongoose';
 
-interface GlobalWithMongoose {
-	mongoose: {
-		conn: Mongoose | null;
-		promise: Promise<Mongoose> | null;
-	};
-}
+export async function connectToDatabase(): Promise<void> {
+	const mongoUri = process.env.MONGO_URI || 'mongodb://localhost:27017/cheddar';
 
-declare const global: GlobalWithMongoose;
-
-let MONGODB_URI = process.env.MONGODB_URI;
-
-if (!MONGODB_URI && process.env.NODE_ENV === 'test') {
-	// In test environment, use the memory server URI if available
-	MONGODB_URI = process.env.MONGODB_TEST_URI;
-}
-
-if (!MONGODB_URI) {
-	throw new Error('Please define the MONGODB_URI environment variable inside .env');
-}
-
-let cached = global.mongoose;
-
-if (!cached) {
-	cached = global.mongoose = { conn: null, promise: null };
-}
-
-async function dbConnect(): Promise<Mongoose> {
-	// If we're already connected, return the Mongoose instance
-	if (mongoose.connection.readyState === 1) {
-		return mongoose;
+	try {
+		await mongoose.connect(mongoUri);
+		console.log('Connected to MongoDB');
+	} catch (error) {
+		console.error('MongoDB connection error:', error);
+		process.exit(1);
 	}
-
-	if (cached.conn) {
-		return cached.conn;
-	}
-
-	if (!cached.promise) {
-		const opts = {
-			bufferCommands: false,
-		};
-
-		cached.promise = mongoose.connect(MONGODB_URI!, opts).then((mongoose) => {
-			return mongoose;
-		});
-	}
-	cached.conn = await cached.promise;
-	return cached.conn;
 }
 
-export default dbConnect;
+export async function disconnectFromDatabase(): Promise<void> {
+	await mongoose.disconnect();
+	console.log('Disconnected from MongoDB');
+}

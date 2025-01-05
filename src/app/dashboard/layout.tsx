@@ -1,7 +1,9 @@
+import React from 'react';
 import { Metadata } from 'next';
 import { getServerSession } from 'next-auth';
 import { redirect } from 'next/navigation';
-import DashboardNav from '../../components/dashboard/DashboardNav';
+import DashboardNav from '@components/dashboard/DashboardNav';
+import { authOptions } from '../../lib/auth';
 
 export const metadata: Metadata = {
 	title: 'Dashboard - Cheddar',
@@ -9,7 +11,7 @@ export const metadata: Metadata = {
 };
 
 export default async function DashboardLayout({ children }: { children: React.ReactNode }) {
-	const session = await getServerSession();
+	const session = await getServerSession(authOptions);
 
 	if (!session) {
 		redirect('/auth/signin');

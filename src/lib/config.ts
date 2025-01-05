@@ -17,6 +17,21 @@ export const config = {
 		callbackUrl: baseUrl,
 		loginPage: `${baseUrl}/api/auth/signin`,
 	},
+	redis: {
+		url: process.env.REDIS_URL || 'redis://localhost:6379',
+		maxRetries: 3,
+		connectTimeout: 5000,
+	},
+	queues: {
+		taskQueue: {
+			name: 'taskQueue',
+			concurrency: 5,
+			limiter: {
+				max: 10,
+				duration: 1000,
+			},
+		},
+	},
 };
 
 // For debugging purposes in development

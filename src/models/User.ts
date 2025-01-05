@@ -2,11 +2,14 @@
 import mongoose from 'mongoose';
 import bcrypt from 'bcryptjs';
 
+import { UserSettings } from '@/types/settings';
+
 export interface IUser extends mongoose.Document {
 	email: string;
 	password: string;
 	name?: string;
 	role: 'user' | 'admin';
+	settings?: Partial<UserSettings>;
 	createdAt: Date;
 	updatedAt: Date;
 }
@@ -34,6 +37,10 @@ const UserSchema = new mongoose.Schema(
 			type: String,
 			enum: ['user', 'admin'],
 			default: 'user',
+		},
+		settings: {
+			type: mongoose.Schema.Types.Mixed,
+			default: {},
 		},
 	},
 	{
