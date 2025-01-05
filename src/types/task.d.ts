@@ -1,48 +1,45 @@
-declare module 'task' {
-	interface Task {
-		id: string;
-		type: 'copy' | 'image' | 'review';
-		priority: 1 | 2 | 3;
-		status: 'pending' | 'processing' | 'completed' | 'failed';
-		input: {
-			prompt: string;
-			context?: string;
-			requirements?: string[];
-			maxTokens?: number;
-			temperature?: number;
-		};
-		output?: {
-			content: string;
-			metadata: Record<string, unknown>;
-			processingTime: number;
-			cost: number;
-		};
-		provider: {
-			primary: string;
-			fallback?: string[];
-		};
-		createdAt: Date;
-		updatedAt: Date;
-		attempts: number;
-		error?: {
-			code: string;
-			message: string;
-			timestamp: Date;
-		}[];
-	}
+import { RouteGenericInterface } from 'fastify';
 
-	interface Provider {
-		id: string;
-		name: string;
-		capabilities: string[];
-		maxTokens: number;
-		costPerToken: number;
-		rateLimit: {
-			requests: number;
-			window: number;
-		};
-		timeout: number;
-		status: 'active' | 'degraded' | 'inactive';
-		reliability: number;
-	}
+interface TaskBase {
+	title: string;
+	description: string;
+	dueDate?: Date;
+	priority?: 'low' | 'medium' | 'high';
+	tags?: string[];
 }
+
+interface TaskResponse extends TaskBase {
+	id: string;
+	metadata?: {
+		sentiment: 'positive' | 'negative' | 'neutral';
+		keywords: string[];
+		language: string;
+	};
+	createdAt?: Date;
+	updatedAt?: Date;
+}
+
+interface CreateTaskRequest extends RouteGenericInterface {
+	Body: TaskBase;
+}
+
+interface GetTaskRequest extends RouteGenericInterface {
+	Params: {
+		id: string;
+	};
+}
+
+interface UpdateTaskRequest extends RouteGenericInterface {
+	Params: {
+		id: string;
+	};
+	Body: Partial<TaskBase>;
+}
+
+interface DeleteTaskRequest extends RouteGenericInterface {
+	Params: {
+		id: string;
+	};
+}
+
+export type { TaskBase, TaskResponse, CreateTaskRequest, GetTaskRequest, UpdateTaskRequest, DeleteTaskRequest };

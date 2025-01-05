@@ -1,7 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   eslint: {
-    ignoreDuringBuilds: true, // We'll handle ESLint separately from the build process
+    ignoreDuringBuilds: true,
   },
   webpack: (config) => {
     config.resolve = {
@@ -15,6 +15,22 @@ const nextConfig = {
       },
     };
     return config;
+  },
+  experimental: {
+    serverActions: {
+      bodySizeLimit: '2mb',
+      allowedOrigins: [
+        'localhost:3000',
+        'localhost:3001',
+        '192.168.50.174:3000',
+        '192.168.50.174:3001'
+      ]
+    },
+    optimizePackageImports: [
+      '@geist-ui/core',
+      '@headlessui/react',
+      '@tanstack/react-query'
+    ]
   },
 };
 

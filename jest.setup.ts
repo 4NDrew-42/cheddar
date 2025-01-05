@@ -1,41 +1,69 @@
-// Import and set up expect first
-import { expect as jestExpect, jest } from '@jest/globals';
-(global as any).expect = jestExpect;
-(global as any).jest = jest;
+/// <reference types="@types/jest" />
+/// <reference types="@types/node" />
 
-// Then import other dependencies
-import { TextEncoder, TextDecoder } from 'util';
-import React from 'react';
+// Import Jest globals first
+import { expect, jest } from '@jest/globals';
 
-// Add TextEncoder/TextDecoder polyfills
-if (typeof global.TextEncoder === 'undefined') {
-  global.TextEncoder = TextEncoder;
-}
-if (typeof global.TextDecoder === 'undefined') {
-  global.TextDecoder = TextDecoder as typeof global.TextDecoder;
-}
-
-// Add React to global scope
-(global as any).React = React;
-
-// Mock next-auth
-jest.mock('next-auth', () => ({
-  getServerSession: jest.fn(() =>
-    Promise.resolve({
-      user: {
-        name: 'Test User',
-        email: 'test@example.com',
-      },
-    })
-  ),
-}));
-
-// Import testing-library after expect is set up
+// Import testing library configuration
 import '@testing-library/jest-dom';
-import 'jest-environment-jsdom';
+import { configure } from '@testing-library/react';
+import { TextEncoder, TextDecoder } from 'util';
 
 // Configure React Testing Library
+configure({
+	testIdAttribute: 'data-test-id',
+});
+
+// Polyfill for TextEncoder/TextDecoder
+global.TextEncoder = TextEncoder;
+global.TextDecoder = TextDecoder as typeof global.TextDecoder;
+
+// Mock global objects
 beforeEach(() => {
-  // Reset all mocks before each test
-  jest.clearAllMocks();
+	// Reset all mocks before each test
+	jest.clearAllMocks();
+
+	// Mock window.matchMedia
+	Object.defineProperty(window, 'matchMedia', {
+		writable: true,
+		value: jest.fn().mockImplementation((query: string) => ({
+			matches: false,
+			media: query,
+			onchange: null,
+			addListener: jest.fn(), // deprecated
+			removeListener: jest.fn(), // deprecated
+			addEventListener: jest.fn(),
+			removeEventListener: jest.fn(),
+			dispatchEvent: jest.fn(),
+		})),
+	});
+
+	// Mock localStorage
+	const localStorageMock = (() => {
+		let store: Record<string, string> = {};
+
+		return {
+			getItem(key: string) {
+				return store[key] || null;
+			},
+			setItem(key: string, value: string) {
+				store[key] = String(value);
+			},
+			removeItem(key: string) {
+				delete store[key];
+			},
+			clear() {
+				store = {};
+			},
+		};
+	})();
+
+	Object.defineProperty(window, 'localStorage', {
+		value: localStorageMock,
+	});
+});
+
+afterEach(() => {
+	// Clean up after each test
+	jest.restoreAllMocks();
 });
